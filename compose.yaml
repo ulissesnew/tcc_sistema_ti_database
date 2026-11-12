@@ -1,0 +1,43 @@
+name: sistema-ti
+
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-sistema_ti}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "127.0.0.1:${MYSQL_PORT:-3306}:3306"
+    command: --default-authentication-plugin=mysql_native_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./sistema_ti(1).sql:/docker-entrypoint-initdb.d/01-sistema_ti.sql:ro
+      - ./TCC_Step_1_Update_Existing_Tables.sql:/docker-entrypoint-initdb.d/02-tcc-step-1-update-existing-tables.sql:ro
+      - ./TCC_Step_1_Seed_and_Automated_Tests.sql:/docker-entrypoint-initdb.d/03-tcc-step-1-seed-and-automated-tests.sql:ro
+      - ./TCC_Step_2_Core_Tables.sql:/docker-entrypoint-initdb.d/04-tcc-step-2-core-tables.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  adminer:
+    image: adminer:4.8.1
+    command: ["php", "-S", "0.0.0.0:8080", "-t", "/var/www/html"]
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      ADMINER_DEFAULT_SERVER: mysql
+    ports:
+      - "127.0.0.1:${ADMINER_PORT:-8080}:8080"
+
+volumes:
+  mysql_data:
