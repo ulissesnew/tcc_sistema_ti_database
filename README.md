@@ -79,6 +79,7 @@ Na primeira criação do volume nomeado `mysql_data`, a imagem oficial do MySQL 
 4. `04-step-2-core-tables.sql` — cria as tabelas centrais `manutencoes` e `descartes`.
 5. `05-step-2-seed-and-automated-tests.sql` — insere dados de teste do Step 2 e executa seus testes de fumaça.
 6. `06-inventory-deduction-trigger.sql` — deducts inventory after `DISCARD` or `LOSS` movements.
+7. `07-inventory-deduction-trigger-tests.sql` — runs visible `PASS`/`FAIL` checks for the inventory trigger.
 
 A pasta `migrations/` é montada como somente leitura. Para incluir uma nova migração, adicione um arquivo `.sql` a ela com o próximo prefixo numérico. O resultado `PASS`/`FAIL` dos testes é gravado nos logs de inicialização do MySQL e pode ser consultado com:
 
@@ -120,6 +121,12 @@ Apply the inventory trigger after Step 2:
 
 ```bash
 docker compose exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"' < migrations/06-inventory-deduction-trigger.sql
+```
+
+Run the visible trigger checks after applying the migration:
+
+```bash
+docker compose exec -T mysql sh -c 'mysql -uroot -p"$MYSQL_ROOT_PASSWORD" "$MYSQL_DATABASE"' < migrations/07-inventory-deduction-trigger-tests.sql
 ```
 
 O Step 2 usa `CREATE TABLE IF NOT EXISTS`, mas essa cláusula não valida o esquema de uma tabela preexistente. Confirme a criação com:
